@@ -1,11 +1,7 @@
-// Seed: 3 products × 2 warehouses with starting stock.
-// Run with: npm run seed
-
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  // Wipe in dependency order so re-seeding works.
   await prisma.reservation.deleteMany();
   await prisma.inventory.deleteMany();
   await prisma.product.deleteMany();
@@ -21,8 +17,6 @@ async function main() {
     prisma.product.create({ data: { name: 'Allo Daily Supplement' } }),
     prisma.product.create({ data: { name: 'Allo Sleep Aid' } }),
   ]);
-
-  // Intentionally low stock on one row so the concurrency test is meaningful.
   const stockMatrix = [
     { product: products[0], wh: wh1, units: 5 },
     { product: products[0], wh: wh2, units: 1 }, // ← contended row
