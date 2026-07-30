@@ -1,42 +1,81 @@
 export default function ProductCard({ product, onReserve, reservingId }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="text-base font-semibold text-slate-900">{product.name}</h3>
-      <p className="mt-1 text-xs text-slate-500">{product.id}</p>
+    <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h3 className="font-display text-base font-semibold text-[var(--ink)]">
+          {product.name}
+        </h3>
+        <span className="font-mono text-[11px] text-[var(--muted)]">
+          {product.id}
+        </span>
+      </div>
 
-      <table className="mt-4 w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-            <th className="pb-2">Warehouse</th>
-            <th className="pb-2">Total</th>
-            <th className="pb-2">Reserved</th>
-            <th className="pb-2">Available</th>
-            <th className="pb-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {product.inventory.map((inv) => {
-            const disabled = inv.available <= 0 || reservingId === inv.id;
-            return (
-              <tr key={inv.id} className="border-t border-slate-100">
-                <td className="py-2 text-slate-700">{inv.warehouse.name}</td>
-                <td className="py-2 text-slate-700">{inv.totalUnits}</td>
-                <td className="py-2 text-slate-700">{inv.reservedUnits}</td>
-                <td className="py-2 font-medium text-slate-900">{inv.available}</td>
-                <td className="py-2 text-right">
-                  <button
-                    disabled={disabled}
-                    onClick={() => onReserve(inv)}
-                    className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                  >
-                    {reservingId === inv.id ? 'Reserving…' : 'Reserve 1'}
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="flex flex-col divide-y divide-[var(--line)]">
+        {product.inventory.map((inv) => {
+          const disabled = inv.available <= 0 || reservingId === inv.id;
+          const reservedPct = inv.totalUnits
+            ? Math.min(100, (inv.reservedUnits / inv.totalUnits) * 100)
+            : 0;
+          const availablePct = inv.totalUnits
+            ? Math.min(100, (inv.available / inv.totalUnits) * 100)
+            : 0;
+          const outOfStock = inv.available <= 0;
+
+          return (
+            <div key={inv.id} className="grid gap-2.5 py-3.5 first:pt-0 last:pb-0">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-[var(--ink)]">
+                  {inv.warehouse.name}
+                </span>
+                <span
+                  className={`font-mono text-xs font-semibold ${
+                    outOfStock ? 'text-[var(--critical)]' : 'text-[var(--available)]'
+                  }`}
+                >
+                  {outOfStock ? 'OUT OF STOCK' : `${inv.available} available`}
+                </span>
+              </div>
+
+              <div className="stat-bar-track">
+                <div
+                  className="stat-bar-fill"
+                  style={{ width: `${reservedPct}%`, background: 'var(--lock)' }}
+                />
+                <div
+                  className="stat-bar-fill"
+                  style={{
+                    width: `${availablePct}%`,
+                    left: `${reservedPct}%`,
+                    background: 'var(--available)',
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-mono text-[11px] text-[var(--muted)]">
+                  {inv.totalUnits} total &middot;{' '}
+                  <span className="text-[var(--lock)]">{inv.reservedUnits} held</span>
+                </div>
+
+                <button
+                  disabled={disabled}
+                  onClick={() => onReserve(inv)}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-[var(--ink)] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[var(--ink)]/85 disabled:cursor-not-allowed disabled:bg-[var(--line-strong)] disabled:text-[var(--muted)]"
+                >
+                  {reservingId === inv.id ? (
+                    <>
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                      Reserving
+                    </>
+                  ) : (
+                    'Reserve 1'
+                  )}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

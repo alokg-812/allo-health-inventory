@@ -5,6 +5,8 @@ import { useReservationStore } from '../store/reservationStore';
 import { useCountdown } from '../hooks/useCountdown';
 import ErrorBanner from '../components/ErrorBanner';
 
+const HOLD_SECONDS = 600;
+
 export default function CheckoutPage() {
   const { reservationId } = useParams();
   const navigate = useNavigate();
@@ -16,12 +18,15 @@ export default function CheckoutPage() {
   const [busy, setBusy] = useState(false);
 
   const countdown = useCountdown(reservation?.expiresAt);
+
   if (!reservation || reservation.id !== reservationId) {
     return (
-      <div className="rounded-md border border-slate-200 bg-white p-6 text-sm text-slate-600">
-        Reservation not found in this session.{' '}
+      <div className="mx-auto max-w-md rounded-xl border border-[var(--line)] bg-[var(--surface)] p-8 text-center">
+        <p className="text-sm text-[var(--muted)]">
+          This reservation isn't in your session.
+        </p>
         <button
-          className="text-slate-900 underline"
+          className="mt-3 font-mono text-xs font-medium text-[var(--ink)] underline underline-offset-4"
           onClick={() => navigate('/')}
         >
           Back to products
@@ -58,61 +63,93 @@ export default function CheckoutPage() {
     navigate('/');
   };
 
+  const urgency =
+    countdown.seconds < 60 ? 'critical' : countdown.seconds < 180 ? 'lock' : 'available';
+  const urgencyColor = `var(--${urgency})`;
+  const progressPct = Math.min(100, Math.max(0, (countdown.seconds / HOLD_SECONDS) * 100));
+
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="text-2xl font-semibold text-slate-900">Checkout</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Your reservation is held for 10 minutes. Complete payment before the
-        timer runs out.
+      <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--lock)]">
+        Held reservation
+      </span>
+      <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
+        Checkout
+      </h1>
+      <p className="mt-1 text-sm text-[var(--muted)]">
+        Complete payment before the timer runs out, or the unit goes back
+        into stock automatically.
       </p>
 
-      <div className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-        <ErrorBanner error={error} onDismiss={() => setError(null)} />
+      <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
-        <dl className="grid grid-cols-2 gap-y-2 text-sm">
-          <dt className="text-slate-500">Reservation ID</dt>
-          <dd className="text-right font-mono text-xs text-slate-700">
-            {reservation.id}
-          </dd>
-          <dt className="text-slate-500">Quantity</dt>
-          <dd className="text-right text-slate-900">{reservation.quantity}</dd>
-          <dt className="text-slate-500">Status</dt>
-          <dd className="text-right text-slate-900">{reservation.status}</dd>
-        </dl>
-
-        <div className="mt-6 flex flex-col items-center">
-          <span className="text-xs uppercase tracking-wide text-slate-500">
-            Time remaining
-          </span>
-          <span
-            className={`mt-1 font-mono text-4xl ${
-              countdown.seconds < 60 ? 'text-red-600' : 'text-slate-900'
-            }`}
-          >
-            {countdown.label}
-          </span>
-          {countdown.expired && (
-            <span className="mt-2 text-xs text-red-600">
-              This reservation has expired.
-            </span>
-          )}
+      <div className="ticket-notch overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface)]">
+        <div className="px-6 py-6">
+          <dl className="grid grid-cols-2 gap-y-3 text-sm">
+            <dt className="text-[var(--muted)]">Reservation ID</dt>
+            <dd className="text-right font-mono text-xs text-[var(--ink)]">
+              {reservation.id}
+            </dd>
+            <dt className="text-[var(--muted)]">Quantity</dt>
+            <dd className="text-right font-mono text-[var(--ink)]">
+              {reservation.quantity}
+            </dd>
+            <dt className="text-[var(--muted)]">Status</dt>
+            <dd className="text-right">
+              <span
+                className="rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide"
+                style={{ background: 'var(--lock-soft)', color: 'var(--lock)' }}
+              >
+                {reservation.status}
+              </span>
+            </dd>
+          </dl>
         </div>
 
-        <div className="mt-6 flex gap-2">
-          <button
-            onClick={handleConfirm}
-            disabled={busy || countdown.expired}
-            className="flex-1 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-          >
-            Confirm purchase
-          </button>
-          <button
-            onClick={handleCancel}
-            disabled={busy}
-            className="flex-1 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            Cancel
-          </button>
+        <div className="ticket-perf px-6 py-6">
+          <div className="flex flex-col items-center">
+            <span className="font-mono text-[11px] uppercase tracking-widest text-[var(--muted)]">
+              Time remaining
+            </span>
+            <span
+              className="font-mono text-5xl font-semibold tabular-nums"
+              style={{ color: urgencyColor }}
+            >
+              {countdown.label}
+            </span>
+
+            <div className="mt-4 w-full">
+              <div className="stat-bar-track">
+                <div
+                  className="stat-bar-fill"
+                  style={{ width: `${progressPct}%`, background: urgencyColor }}
+                />
+              </div>
+            </div>
+
+            {countdown.expired && (
+              <span className="mt-3 font-mono text-xs font-medium text-[var(--critical)]">
+                This reservation has expired.
+              </span>
+            )}
+          </div>
+
+          <div className="mt-6 flex gap-2">
+            <button
+              onClick={handleConfirm}
+              disabled={busy || countdown.expired}
+              className="flex-1 rounded-md bg-[var(--ink)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[var(--ink)]/85 disabled:cursor-not-allowed disabled:bg-[var(--line-strong)] disabled:text-[var(--muted)]"
+            >
+              Confirm purchase
+            </button>
+            <button
+              onClick={handleCancel}
+              disabled={busy}
+              className="flex-1 rounded-md border border-[var(--line-strong)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--bg)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </div>
