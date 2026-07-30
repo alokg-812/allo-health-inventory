@@ -5,6 +5,11 @@ A full-stack inventory reservation system built using React, Node.js, Express, P
 The goal of this project was to prevent overselling of products during checkout when multiple users try reserving the same inventory at the same time.
 
 ---
+# Assignment Details:
+- [Frontend](https://allo-health-inventory-omega.vercel.app)
+- [Backend](https://allo-health-inventory.onrender.com/api/products)
+- [Github](https://github.com/alokg-812/allo-health-inventory)
+---
 
 # Tech Stack
 
